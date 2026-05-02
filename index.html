@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Grow Some Plants</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="hud">
+      <h1>Grow Some Plants</h1>
+      <p>Move with WASD or Arrow Keys.</p>
+      <p>E interact/harvest, B inventory, mouse wheel hotbar.</p>
+    </div>
+
+    <main class="game-wrap">
+      <canvas id="game" width="960" height="600" aria-label="Garden game canvas"></canvas>
+    </main>
+
+    <section id="menuOverlay" class="overlay hidden" aria-live="polite">
+      <div class="menu-card">
+        <h2 id="menuTitle"></h2>
+        <p id="menuDesc"></p>
+        <div id="menuActions" class="menu-actions"></div>
+        <button id="closeMenuBtn" type="button">Close</button>
+      </div>
+    </section>
+
+    <script src="./game.js"></script>
+  </body>
+</html>

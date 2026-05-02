@@ -1,0 +1,122 @@
+:root {
+  color-scheme: light;
+  --bg: #f3fbff;
+  --card: #ffffff;
+  --text: #1f2d3d;
+  --shadow: rgba(0, 0, 0, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  overflow: hidden;
+  font-family: Arial, Helvetica, sans-serif;
+  color: var(--text);
+  background: linear-gradient(180deg, #d8f0ff 0%, var(--bg) 100%);
+  display: grid;
+  place-items: center;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.hud {
+  text-align: center;
+}
+
+.hud h1 {
+  margin: 0 0 0.4rem;
+}
+
+.hud p {
+  margin: 0.2rem 0;
+}
+
+.game-wrap {
+  background: var(--card);
+  border-radius: 14px;
+  box-shadow: 0 12px 30px var(--shadow);
+  padding: 10px;
+}
+
+#game {
+  display: block;
+  width: min(960px, calc(100vw - 2.5rem));
+  height: auto;
+  touch-action: none;
+  border-radius: 10px;
+  border: 2px solid #a8c7d6;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 15, 20, 0.48);
+  display: grid;
+  place-items: center;
+}
+
+.overlay.hidden {
+  display: none;
+}
+
+.menu-card {
+  width: min(440px, 92vw);
+  background: var(--card);
+  border-radius: 16px;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.22);
+  padding: 1.2rem 1.2rem 1rem;
+}
+
+.menu-card h2 {
+  margin: 0 0 0.5rem;
+}
+
+.menu-card p {
+  margin: 0 0 1rem;
+  line-height: 1.45;
+}
+
+.menu-card button {
+  border: 0;
+  border-radius: 10px;
+  padding: 0.6rem 1rem;
+  background: #284d68;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.menu-card button:hover {
+  filter: brightness(1.08);
+}
+
+.menu-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.qty-wrap {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.qty-input {
+  width: 64px;
+  border-radius: 8px;
+  border: 1px solid #7f97a8;
+  padding: 0.46rem 0.4rem;
+  font-weight: 700;
+}
+
+.qty-btn,
+.qty-buy-btn {
+  min-width: 44px;
+}
