@@ -7,14 +7,21 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <div class="hud">
-      <h1>Grow Some Plants</h1>
-      <p>Move with WASD or Arrow Keys.</p>
-      <p>E interact/harvest, B inventory, mouse wheel hotbar.</p>
+    <div class="hud" aria-label="Controls">
+      <p>WASD · E · B · wheel = hotbar slot · middle-click = center map · right-click Buy for quantity</p>
     </div>
 
     <main class="game-wrap">
       <canvas id="game" width="960" height="600" aria-label="Garden game canvas"></canvas>
+      <div id="bootGate" class="boot-gate" role="button" tabindex="0" aria-label="Click to start game">
+        <p class="boot-gate-hint">Click the game to play</p>
+      </div>
+      <div id="loadingScreen" class="loading-screen hidden" aria-live="polite" aria-hidden="true">
+        <div class="loading-screen-inner">
+          <h1 class="loading-title">GROW SOME PLANTS</h1>
+          <p class="loading-sub">Loading</p>
+        </div>
+      </div>
     </main>
 
     <section id="menuOverlay" class="overlay hidden" aria-live="polite">
@@ -26,6 +33,6 @@
       </div>
     </section>
 
-    <script src="./game.js"></script>
+    <script src="./game.js?v=3"></script>
   </body>
 </html>
