@@ -7,6 +7,11 @@ const menuDesc = document.getElementById("menuDesc");
 const menuActions = document.getElementById("menuActions");
 const closeMenuBtn = document.getElementById("closeMenuBtn");
 
+const world = {
+  width: canvas.width,
+  height: canvas.height,
+};
+
 const player = {
   x: 160,
   y: 400,
@@ -24,8 +29,7 @@ const gameState = {
   messageUntil: 0,
 };
 
-const STORAGE_KEY = "grow_some_plants_save";
-const LEGACY_STORAGE_KEYS = ["grow_some_plants_save_v2", "grow_some_plants_save_v1"];
+const STORAGE_KEY = "grow_some_plants_save_v1";
 
 const items = {
   carrotSeed: {
@@ -36,14 +40,6 @@ const items = {
     tint: "#d6862f",
     stackable: true,
   },
-  mintSeed: {
-    id: "mintSeed",
-    name: "Mint Seed",
-    icon: "mintSeed",
-    price: 70,
-    tint: "#5eb88a",
-    stackable: true,
-  },
   carrot: {
     id: "carrot",
     name: "Carrot",
@@ -51,14 +47,6 @@ const items = {
     sellPrice: 8,
     tint: "#e8721d",
     stackable: false,
-  },
-  mint: {
-    id: "mint",
-    name: "Mint",
-    icon: "mint",
-    sellPrice: 110,
-    tint: "#6ecf9a",
-    stackable: true,
   },
 };
 
@@ -71,16 +59,10 @@ const keys = {
   right: false,
 };
 
-const WEST_GARDEN_W = 400;
-const MAIN_GARDEN_W = 670;
-const DIRT_RIGHT = WEST_GARDEN_W + MAIN_GARDEN_W;
-const SHOP_ZONE_W = 280;
-const CLEARING_W = MAIN_GARDEN_W;
-
 const stands = [
   {
     type: "sell",
-    x: DIRT_RIGHT + 20,
+    x: 720,
     y: 148,
     w: 210,
     h: 165,
@@ -89,11 +71,11 @@ const stands = [
     text: "SELL",
     textColor: "#7a1010",
     menuTitle: "Sell Stand",
-    menuDesc: "Sell carrots, mint, and other goods here for cash.",
+    menuDesc: "Side-view farm stand. Sell carrots here for cash.",
   },
   {
     type: "buy",
-    x: DIRT_RIGHT + 20,
+    x: 720,
     y: 338,
     w: 210,
     h: 165,
@@ -102,21 +84,12 @@ const stands = [
     text: "BUY",
     textColor: "#12367d",
     menuTitle: "Buy Stand",
-    menuDesc: "Carrot seeds $5 · Mint seeds $70. Left-click buys 1, right-click for quantity.",
+    menuDesc: "Buy carrot seeds here. You start with $20.",
   },
 ];
 
-const WORLD_WIDTH = DIRT_RIGHT + SHOP_ZONE_W + CLEARING_W;
-const VIEW_WIDTH = 960;
-const VIEW_HEIGHT = 600;
-canvas.width = VIEW_WIDTH;
-canvas.height = VIEW_HEIGHT;
-const world = { width: WORLD_WIDTH, height: VIEW_HEIGHT };
-const camera = { x: 0, y: 0 };
-let cameraMode = "follow";
-
+const TERRAIN_SPLIT_X = 670;
 const PLANT_GROW_MS = 5000;
-const MINT_GROW_MS = 15000;
 const PLANT_GRID = 30;
 const plants = [];
 let lastAutoSaveAt = 0;
@@ -183,19 +156,15 @@ function drawWoodTexture(rectX, rectY, rectW, rectH) {
 }
 
 function drawGardenBackground() {
-  drawDirtTexture(0, 0, DIRT_RIGHT, world.height, "#775635", "#5f422a", "#8a6640");
+  // Left region: dirt only
+  drawDirtTexture(0, 0, TERRAIN_SPLIT_X, world.height, "#775635", "#5f422a", "#8a6640");
 
-  ctx.fillStyle = "rgba(45, 32, 20, 0.35)";
-  ctx.fillRect(WEST_GARDEN_W - 2, 96, 4, world.height - 116);
+  // Right region: wood only
+  drawWoodTexture(TERRAIN_SPLIT_X, 0, world.width - TERRAIN_SPLIT_X, world.height);
 
-  drawWoodTexture(DIRT_RIGHT, 0, world.width - DIRT_RIGHT, world.height);
-
-  const shopClearingSplit = DIRT_RIGHT + SHOP_ZONE_W;
-  ctx.fillStyle = "rgba(55, 38, 22, 0.45)";
-  ctx.fillRect(shopClearingSplit - 2, 0, 4, world.height);
-
+  // Vertical seam between dirt and wood
   ctx.fillStyle = "rgba(44, 26, 15, 0.52)";
-  ctx.fillRect(DIRT_RIGHT - 2, 0, 4, world.height);
+  ctx.fillRect(TERRAIN_SPLIT_X - 2, 0, 4, world.height);
 }
 
 function getCarrotValueMultiplier(weightKg) {
@@ -306,118 +275,7 @@ function drawStand(stand) {
   ctx.fillRect(stand.x + 6, stand.y + stand.h + 2, stand.w - 12, 10);
 }
 
-function drawMintSerratedLeaf(cx, cy, baseY, tipY, maxHalfW, teeth, fill, stroke, drawVeins) {
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.beginPath();
-  ctx.moveTo(0, baseY);
-  for (let i = 0; i <= teeth; i += 1) {
-    const t = i / teeth;
-    const y = baseY + t * (tipY - baseY);
-    const envelope = maxHalfW * Math.sin(Math.PI * (1 - t) * 0.98);
-    const bump = i & 1 ? envelope * 0.78 : envelope * 1.16;
-    ctx.lineTo(bump, y);
-  }
-  ctx.lineTo(0, tipY);
-  for (let i = teeth; i >= 0; i -= 1) {
-    const t = i / teeth;
-    const y = baseY + t * (tipY - baseY);
-    const envelope = maxHalfW * Math.sin(Math.PI * (1 - t) * 0.98);
-    const bump = i & 1 ? envelope * 0.78 : envelope * 1.16;
-    ctx.lineTo(-bump, y);
-  }
-  ctx.closePath();
-  ctx.fillStyle = fill;
-  ctx.fill();
-  ctx.strokeStyle = stroke;
-  ctx.lineWidth = 1.1;
-  ctx.stroke();
-
-  if (drawVeins) {
-    ctx.beginPath();
-    ctx.moveTo(0, baseY - 1);
-    ctx.lineTo(0, tipY + 2);
-    ctx.strokeStyle = "#1a5a3a";
-    ctx.lineWidth = 1.35;
-    ctx.stroke();
-    const laterals = 4;
-    for (let side = -1; side <= 1; side += 2) {
-      for (let i = 1; i <= laterals; i += 1) {
-        const t = i / (laterals + 1);
-        const y = baseY + t * (tipY - baseY);
-        const wAtY = maxHalfW * Math.sin(Math.PI * (1 - t)) * 0.62;
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.quadraticCurveTo(side * wAtY * 0.45, y + side * 1.5, side * wAtY, y - 2);
-        ctx.strokeStyle = "#1a5a3a";
-        ctx.lineWidth = 0.85;
-        ctx.stroke();
-      }
-    }
-  }
-  ctx.restore();
-}
-
-function drawMintPlant(plant) {
-  const age = now() - plant.plantedAt;
-  plant.mature = age >= MINT_GROW_MS;
-  const px = plant.x;
-  const groundY = plant.y;
-  const phase = age < 4000 ? 0 : age < 8000 ? 1 : age < 12000 ? 2 : 3;
-
-  const fillMain = "#52c98a";
-  const fillHi = "#6ed9a0";
-  const strokeCol = "#2a7a52";
-
-  if (phase === 0) {
-    ctx.fillStyle = "#8a603e";
-    ctx.beginPath();
-    ctx.ellipse(px, groundY, 9, 4.5, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#1e3d24";
-    ctx.fillRect(px - 2, groundY - 3, 4, 5);
-    return;
-  }
-
-  if (phase === 1) {
-    ctx.strokeStyle = "#2d6b45";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(px, groundY);
-    ctx.lineTo(px, groundY - 8);
-    ctx.stroke();
-    drawMintSerratedLeaf(px, groundY - 6, 5, -16, 5.5, 3, fillMain, strokeCol, false);
-    return;
-  }
-
-  if (phase === 2) {
-    ctx.strokeStyle = "#2d6b45";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(px, groundY);
-    ctx.lineTo(px, groundY - 10);
-    ctx.stroke();
-    drawMintSerratedLeaf(px - 4, groundY - 8, 6, -22, 7, 4, fillHi, strokeCol, false);
-    drawMintSerratedLeaf(px + 5, groundY - 7, 6, -20, 6.5, 4, fillMain, strokeCol, false);
-    return;
-  }
-
-  ctx.strokeStyle = "#256341";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(px, groundY);
-  ctx.lineTo(px, groundY - 12);
-  ctx.stroke();
-  drawMintSerratedLeaf(px - 7, groundY - 10, 7, -30, 11, 6, fillHi, strokeCol, true);
-  drawMintSerratedLeaf(px + 8, groundY - 9, 7, -28, 10.5, 6, fillMain, strokeCol, true);
-}
-
 function drawPlant(plant) {
-  if (plant.type === "mint") {
-    drawMintPlant(plant);
-    return;
-  }
-
   const age = now() - plant.plantedAt;
   const progress = clamp(age / PLANT_GROW_MS, 0, 1);
   plant.mature = progress >= 1;
@@ -662,27 +520,6 @@ function renderItemIcon(item, x, y, size) {
     ctx.fill();
     ctx.fillStyle = "#4dbb54";
     ctx.fillRect(x + size * 0.44, y + size * 0.06, size * 0.12, size * 0.18);
-    return;
-  }
-
-  if (item.icon === "mintSeed") {
-    ctx.fillStyle = "#c8e8d8";
-    ctx.beginPath();
-    ctx.ellipse(x + size * 0.5, y + size * 0.55, size * 0.18, size * 0.12, 0.2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = "#3d8f65";
-    ctx.stroke();
-    ctx.fillStyle = "#2a5c40";
-    ctx.fillRect(x + size * 0.46, y + size * 0.38, size * 0.08, size * 0.12);
-    return;
-  }
-
-  if (item.icon === "mint") {
-    const cx = x + size * 0.5;
-    const cy = y + size * 0.62;
-    const sc = size / 30;
-    drawMintSerratedLeaf(cx - 5 * sc, cy, 2.5 * sc, -11 * sc, 4.8 * sc, 5, "#6ed9a0", "#2a7a52", true);
-    drawMintSerratedLeaf(cx + 5 * sc, cy, 2.5 * sc, -10 * sc, 4.5 * sc, 5, "#52c98a", "#2a7a52", true);
   }
 }
 
@@ -749,18 +586,17 @@ function drawMoneyAndHints() {
   ctx.fillText(`Holding: ${holdingText}`, 26, 52);
 
   ctx.fillStyle = "rgba(38, 24, 14, 0.75)";
-  ctx.fillRect(14, 88, 530, 46);
+  ctx.fillRect(14, 88, 418, 30);
   ctx.fillStyle = "#f7ead5";
-  ctx.font = "12px Arial";
-  ctx.fillText("E plant/harvest | B inventory | Click hotbar | Wheel = switch slot | Right-click Buy for qty", 22, 94);
-  ctx.fillText("Middle-click (scroll wheel button): center map — move with WASD to follow player again", 22, 110);
+  ctx.font = "13px Arial";
+  ctx.fillText("E plant/harvest | B inventory | Click/Wheel hotbar | Right-click Buy for quantity", 22, 96);
 }
 
 function getHotbarLayout() {
   const barW = 360;
   const barH = 72;
-  const x = VIEW_WIDTH / 2 - barW / 2;
-  const y = VIEW_HEIGHT - barH - 16;
+  const x = world.width / 2 - barW / 2;
+  const y = world.height - barH - 16;
   return { x, y, barW, barH };
 }
 
@@ -796,19 +632,14 @@ function saveProgress() {
     selectedHotbar: gameState.selectedHotbar,
     player: { x: player.x, y: player.y },
     inventory: inventory.map(sanitizeInventorySlot),
-    plants: plants.map((plant) => {
-      const row = {
-        type: plant.type === "mint" ? "mint" : "carrot",
-        x: plant.x,
-        y: plant.y,
-        plantedAt: plant.plantedAt,
-        mature: !!plant.mature,
-      };
-      if (row.type === "carrot") {
-        row.weightKg = plant.weightKg ?? 1.09;
-      }
-      return row;
-    }),
+    plants: plants.map((plant) => ({
+      type: plant.type,
+      x: plant.x,
+      y: plant.y,
+      plantedAt: plant.plantedAt,
+      mature: !!plant.mature,
+      weightKg: plant.weightKg ?? 1.09,
+    })),
   };
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
@@ -823,16 +654,6 @@ function loadProgress() {
     raw = localStorage.getItem(STORAGE_KEY);
   } catch (_error) {
     raw = null;
-  }
-  if (!raw) {
-    for (const legacyKey of LEGACY_STORAGE_KEYS) {
-      try {
-        raw = localStorage.getItem(legacyKey);
-        if (raw) break;
-      } catch (_e) {
-        raw = null;
-      }
-    }
   }
   if (!raw) return false;
 
@@ -860,27 +681,15 @@ function loadProgress() {
       for (const p of save.plants) {
         if (!Number.isFinite(p?.x) || !Number.isFinite(p?.y) || !Number.isFinite(p?.plantedAt)) continue;
         if (!isDirtArea(p.x, p.y)) continue;
-        const plantType = p.type === "mint" ? "mint" : "carrot";
-        const base = {
-          type: plantType,
-          x: clamp(p.x, 24, DIRT_RIGHT - 24),
+        plants.push({
+          type: "carrot",
+          x: clamp(p.x, 24, TERRAIN_SPLIT_X - 24),
           y: clamp(p.y, 110, world.height - 24),
           plantedAt: p.plantedAt,
           mature: !!p.mature,
-        };
-        if (plantType === "carrot") {
-          base.weightKg = clamp(Number(p.weightKg) || 1.09, 0.3, 2.3);
-        }
-        plants.push(base);
+          weightKg: clamp(Number(p.weightKg) || 1.09, 0.3, 2.3),
+        });
       }
-    }
-    try {
-      saveProgress();
-      for (const legacyKey of LEGACY_STORAGE_KEYS) {
-        localStorage.removeItem(legacyKey);
-      }
-    } catch (_e) {
-      // Still keep in-memory progress even if migrate write fails.
     }
     return true;
   } catch (_error) {
@@ -892,12 +701,12 @@ function drawInventoryOverlay() {
   if (!gameState.inventoryOpen) return;
 
   ctx.fillStyle = "rgba(0, 0, 0, 0.56)";
-  ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+  ctx.fillRect(0, 0, world.width, world.height);
 
   const panelW = 520;
   const panelH = 540;
-  const panelX = VIEW_WIDTH / 2 - panelW / 2;
-  const panelY = VIEW_HEIGHT / 2 - panelH / 2;
+  const panelX = world.width / 2 - panelW / 2;
+  const panelY = world.height / 2 - panelH / 2;
   drawDirtTexture(panelX, panelY, panelW, panelH, "#795635", "#67472b", "#89623d");
   ctx.strokeStyle = "#f1e4cd";
   ctx.lineWidth = 3;
@@ -947,7 +756,7 @@ function drawMessage() {
   if (now() > gameState.messageUntil) return;
   const w = 460;
   const h = 46;
-  const x = VIEW_WIDTH / 2 - w / 2;
+  const x = world.width / 2 - w / 2;
   const y = 16;
   ctx.fillStyle = "rgba(33, 21, 12, 0.86)";
   ctx.fillRect(x, y, w, h);
@@ -961,122 +770,6 @@ function drawMessage() {
   ctx.fillText(gameState.message, x + w / 2, y + h / 2);
 }
 
-function appendBuyProductRow(itemId, label) {
-  const item = items[itemId];
-  const buyBtn = document.createElement("button");
-  buyBtn.type = "button";
-  buyBtn.textContent = label;
-  menuActions.appendChild(buyBtn);
-
-  const qtyWrap = document.createElement("div");
-  qtyWrap.className = "qty-wrap";
-  qtyWrap.style.display = "none";
-
-  const minusBtn = document.createElement("button");
-  minusBtn.type = "button";
-  minusBtn.textContent = "-";
-  minusBtn.className = "qty-btn";
-
-  const qtyInput = document.createElement("input");
-  qtyInput.type = "number";
-  qtyInput.min = "1";
-  qtyInput.step = "1";
-  qtyInput.value = "1";
-  qtyInput.className = "qty-input";
-
-  const plusBtn = document.createElement("button");
-  plusBtn.type = "button";
-  plusBtn.textContent = "+";
-  plusBtn.className = "qty-btn";
-
-  const allBtn = document.createElement("button");
-  allBtn.type = "button";
-  allBtn.textContent = "All";
-  allBtn.className = "qty-btn";
-
-  const buyQtyBtn = document.createElement("button");
-  buyQtyBtn.type = "button";
-  buyQtyBtn.textContent = "Buy";
-  buyQtyBtn.className = "qty-buy-btn";
-
-  const sanitizeQty = (fallback = 1) => {
-    const max = Math.max(1, getMaxBuyableCount(itemId));
-    const parsed = Math.floor(Number(qtyInput.value));
-    const rawVal = Number.isFinite(parsed) ? parsed : fallback;
-    const safe = clamp(rawVal, 1, max);
-    qtyInput.value = String(safe);
-    return safe;
-  };
-
-  const buyAmount = (amount) => {
-    const maxBuy = getMaxBuyableCount(itemId);
-    if (maxBuy <= 0) {
-      showMessage("Not enough money.");
-      return;
-    }
-    const qty = clamp(Math.floor(amount), 1, maxBuy);
-    if (!addItem(itemId, qty)) {
-      showMessage("Inventory is full.");
-      return;
-    }
-    gameState.money -= qty * item.price;
-    saveProgress();
-    showMessage(`Bought ${qty} × ${item.name}.`);
-    sanitizeQty();
-  };
-
-  buyBtn.addEventListener("click", () => {
-    buyAmount(1);
-  });
-
-  buyBtn.addEventListener("contextmenu", (event) => {
-    event.preventDefault();
-    qtyWrap.style.display = "flex";
-    sanitizeQty();
-    showMessage(`Quantity for ${item.name}: type, +/-, or All.`);
-  });
-
-  minusBtn.addEventListener("click", () => {
-    qtyInput.value = String(Math.max(1, (Math.floor(Number(qtyInput.value) || 1) - 1)));
-    sanitizeQty();
-  });
-
-  plusBtn.addEventListener("click", () => {
-    qtyInput.value = String(Math.floor(Number(qtyInput.value) || 1) + 1);
-    sanitizeQty();
-  });
-
-  qtyInput.addEventListener("focus", () => {
-    qtyInput.select();
-  });
-
-  qtyInput.addEventListener("input", () => {
-    const cleaned = qtyInput.value.replace(/[^\d]/g, "");
-    qtyInput.value = cleaned;
-  });
-
-  qtyInput.addEventListener("blur", () => {
-    sanitizeQty();
-  });
-
-  allBtn.addEventListener("click", () => {
-    const maxBuy = getMaxBuyableCount(itemId);
-    if (maxBuy <= 0) {
-      showMessage("Not enough money.");
-      return;
-    }
-    qtyInput.value = String(maxBuy);
-    buyAmount(maxBuy);
-  });
-
-  buyQtyBtn.addEventListener("click", () => {
-    buyAmount(sanitizeQty());
-  });
-
-  qtyWrap.append(minusBtn, qtyInput, plusBtn, allBtn, buyQtyBtn);
-  menuActions.appendChild(qtyWrap);
-}
-
 function setMenu(stand) {
   gameState.openMenuType = stand.type;
   menuTitle.textContent = stand.menuTitle;
@@ -1084,8 +777,118 @@ function setMenu(stand) {
   menuActions.innerHTML = "";
 
   if (stand.type === "buy") {
-    appendBuyProductRow("carrotSeed", `Buy Carrot Seed ($${items.carrotSeed.price})`);
-    appendBuyProductRow("mintSeed", `Buy Mint Seed ($${items.mintSeed.price})`);
+    const buyBtn = document.createElement("button");
+    buyBtn.type = "button";
+    buyBtn.textContent = "Buy Carrot Seed ($5)";
+    menuActions.appendChild(buyBtn);
+
+    const qtyWrap = document.createElement("div");
+    qtyWrap.className = "qty-wrap";
+    qtyWrap.style.display = "none";
+
+    const minusBtn = document.createElement("button");
+    minusBtn.type = "button";
+    minusBtn.textContent = "-";
+    minusBtn.className = "qty-btn";
+
+    const qtyInput = document.createElement("input");
+    qtyInput.type = "number";
+    qtyInput.min = "1";
+    qtyInput.step = "1";
+    qtyInput.value = "1";
+    qtyInput.className = "qty-input";
+
+    const plusBtn = document.createElement("button");
+    plusBtn.type = "button";
+    plusBtn.textContent = "+";
+    plusBtn.className = "qty-btn";
+
+    const allBtn = document.createElement("button");
+    allBtn.type = "button";
+    allBtn.textContent = "All";
+    allBtn.className = "qty-btn";
+
+    const buyQtyBtn = document.createElement("button");
+    buyQtyBtn.type = "button";
+    buyQtyBtn.textContent = "Buy";
+    buyQtyBtn.className = "qty-buy-btn";
+
+    const sanitizeQty = (fallback = 1) => {
+      const max = Math.max(1, getMaxBuyableCount("carrotSeed"));
+      const parsed = Math.floor(Number(qtyInput.value));
+      const raw = Number.isFinite(parsed) ? parsed : fallback;
+      const safe = clamp(raw, 1, max);
+      qtyInput.value = String(safe);
+      return safe;
+    };
+
+    const buyAmount = (amount) => {
+      const maxBuy = getMaxBuyableCount("carrotSeed");
+      if (maxBuy <= 0) {
+        showMessage("Not enough money.");
+        return;
+      }
+      const qty = clamp(Math.floor(amount), 1, maxBuy);
+      if (!addItem("carrotSeed", qty)) {
+        showMessage("Inventory is full.");
+        return;
+      }
+      gameState.money -= qty * items.carrotSeed.price;
+      saveProgress();
+      showMessage(`Bought ${qty} Carrot Seed(s).`);
+      sanitizeQty();
+    };
+
+    buyBtn.addEventListener("click", () => {
+      buyAmount(1);
+    });
+
+    buyBtn.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+      qtyWrap.style.display = "flex";
+      sanitizeQty();
+      showMessage("Quantity mode: type number, +/- , or All.");
+    });
+
+    minusBtn.addEventListener("click", () => {
+      qtyInput.value = String(Math.max(1, (Math.floor(Number(qtyInput.value) || 1) - 1)));
+      sanitizeQty();
+    });
+
+    plusBtn.addEventListener("click", () => {
+      qtyInput.value = String(Math.floor(Number(qtyInput.value) || 1) + 1);
+      sanitizeQty();
+    });
+
+    qtyInput.addEventListener("focus", () => {
+      qtyInput.select();
+    });
+
+    qtyInput.addEventListener("input", () => {
+      const cleaned = qtyInput.value.replace(/[^\d]/g, "");
+      qtyInput.value = cleaned;
+    });
+
+    qtyInput.addEventListener("blur", () => {
+      sanitizeQty();
+    });
+
+    allBtn.addEventListener("click", () => {
+      const maxBuy = getMaxBuyableCount("carrotSeed");
+      if (maxBuy <= 0) {
+        showMessage("Not enough money.");
+        return;
+      }
+      qtyInput.value = String(maxBuy);
+      buyAmount(maxBuy);
+    });
+
+    buyQtyBtn.addEventListener("click", () => {
+      buyAmount(sanitizeQty());
+    });
+
+    qtyWrap.append(minusBtn, qtyInput, plusBtn, allBtn, buyQtyBtn);
+    menuActions.appendChild(qtyWrap);
   }
 
   if (stand.type === "sell") {
@@ -1155,10 +958,6 @@ function setMenu(stand) {
         showMessage(`Holding carrot ${toFixedNumber(weightKg, 2)}kg -> $${value}.`);
         return;
       }
-      if (holding.itemId === "mint") {
-        showMessage(`Holding mint -> $${value} (stack ${holding.amount}).`);
-        return;
-      }
       showMessage(`Holding value: $${value}.`);
     });
     menuActions.appendChild(priceBtn);
@@ -1170,17 +969,6 @@ function setMenu(stand) {
 function closeMenu() {
   menuOverlay.classList.add("hidden");
   gameState.openMenuType = null;
-}
-
-function updateCamera() {
-  if (cameraMode === "centered") {
-    camera.x = clamp((world.width - VIEW_WIDTH) / 2, 0, Math.max(0, world.width - VIEW_WIDTH));
-    camera.y = 0;
-    return;
-  }
-  camera.x = player.x - VIEW_WIDTH / 2;
-  camera.x = clamp(camera.x, 0, world.width - VIEW_WIDTH);
-  camera.y = 0;
 }
 
 function updatePlayer() {
@@ -1199,9 +987,6 @@ function updatePlayer() {
     dy /= len;
   }
 
-  if (dx !== 0 || dy !== 0) {
-    cameraMode = "follow";
-  }
   player.x += dx * player.speed;
   player.y += dy * player.speed;
   player.x = clamp(player.x, player.radius, world.width - player.radius);
@@ -1234,14 +1019,14 @@ function findNearbyPlant(maxDistance = 56) {
 }
 
 function isDirtArea(x, y) {
-  return x > 16 && x < DIRT_RIGHT - 14 && y > 96 && y < world.height - 20;
+  return x > 16 && x < TERRAIN_SPLIT_X - 14 && y > 96 && y < world.height - 20;
 }
 
 function getPlantingPositionFromPlayer() {
   if (!isDirtArea(player.x, player.y)) return null;
   const snappedX = Math.round(player.x / PLANT_GRID) * PLANT_GRID;
   const snappedY = Math.round((player.y + player.radius * 0.45) / PLANT_GRID) * PLANT_GRID;
-  const plantX = clamp(snappedX, 24, DIRT_RIGHT - 24);
+  const plantX = clamp(snappedX, 24, TERRAIN_SPLIT_X - 24);
   const plantY = clamp(snappedY, 110, world.height - 24);
   if (!isDirtArea(plantX, plantY)) return null;
   return { x: plantX, y: plantY };
@@ -1256,17 +1041,6 @@ function interactWithGround() {
 
   const nearbyPlant = findNearbyPlant();
   if (nearbyPlant && nearbyPlant.mature) {
-    if (nearbyPlant.type === "mint") {
-      if (!addItem("mint", 1)) {
-        showMessage("Inventory full. Cannot harvest.");
-        return;
-      }
-      const plantIndex = plants.indexOf(nearbyPlant);
-      if (plantIndex !== -1) plants.splice(plantIndex, 1);
-      saveProgress();
-      showMessage("Harvested mint.");
-      return;
-    }
     const harvestWeight = clamp(Number(nearbyPlant.weightKg) || 1.09, 0.3, 2.3);
     if (!addItem("carrot", 1, { weightKg: harvestWeight })) {
       showMessage("Inventory full. Cannot harvest.");
@@ -1296,49 +1070,28 @@ function interactWithGround() {
   }
 
   const selectedStack = getHotbarSlot(gameState.selectedHotbar);
-  if (!selectedStack) {
-    showMessage("Hold a seed in hotbar to plant.");
+  if (!selectedStack || selectedStack.itemId !== "carrotSeed") {
+    showMessage("Hold Carrot Seed in hotbar to plant.");
     return;
   }
-  if (selectedStack.itemId === "carrotSeed") {
-    removeItem("carrotSeed", 1);
-    plants.push({
-      type: "carrot",
-      x: plantPos.x,
-      y: plantPos.y,
-      plantedAt: now(),
-      mature: false,
-      weightKg: rollCarrotWeight(),
-    });
-    saveProgress();
-    showMessage("Planted carrot seed.");
-    return;
-  }
-  if (selectedStack.itemId === "mintSeed") {
-    removeItem("mintSeed", 1);
-    plants.push({
-      type: "mint",
-      x: plantPos.x,
-      y: plantPos.y,
-      plantedAt: now(),
-      mature: false,
-    });
-    saveProgress();
-    showMessage("Planted mint seed.");
-    return;
-  }
-  showMessage("Hold carrot or mint seed in hotbar to plant.");
+  removeItem("carrotSeed", 1);
+  plants.push({
+    type: "carrot",
+    x: plantPos.x,
+    y: plantPos.y,
+    plantedAt: now(),
+    mature: false,
+    weightKg: rollCarrotWeight(),
+  });
+  saveProgress();
+  showMessage("Planted carrot seed.");
 }
 
 function drawScene() {
-  updateCamera();
-  ctx.save();
-  ctx.translate(-camera.x, -camera.y);
   drawGardenBackground();
   drawPlants();
   stands.forEach(drawStand);
   drawPlayer();
-  ctx.restore();
   drawHotbar();
   drawMoneyAndHints();
   drawMessage();
@@ -1397,20 +1150,10 @@ window.addEventListener("wheel", (event) => {
   saveProgress();
 }, { passive: false });
 
-function centerMapCamera() {
-  cameraMode = "centered";
-}
-
 canvas.addEventListener("mousedown", (event) => {
-  if (event.button === 1) {
-    event.preventDefault();
-    centerMapCamera();
-    return;
-  }
-  if (event.button !== 0) return;
   const rect = canvas.getBoundingClientRect();
-  const scaleX = VIEW_WIDTH / rect.width;
-  const scaleY = VIEW_HEIGHT / rect.height;
+  const scaleX = world.width / rect.width;
+  const scaleY = world.height / rect.height;
   const mouseX = (event.clientX - rect.left) * scaleX;
   const mouseY = (event.clientY - rect.top) * scaleY;
   const slot = pickHotbarSlotFromPoint(mouseX, mouseY);
@@ -1420,61 +1163,17 @@ canvas.addEventListener("mousedown", (event) => {
   }
 });
 
-canvas.addEventListener("auxclick", (event) => {
-  if (event.button === 1) {
-    event.preventDefault();
-    centerMapCamera();
-  }
-});
-
 closeMenuBtn.addEventListener("click", closeMenu);
 menuOverlay.addEventListener("click", (event) => {
   if (event.target === menuOverlay) closeMenu();
 });
 
 const hasLoadedSave = loadProgress();
-if (!hasLoadedSave) {
+if (hasLoadedSave) {
+  showMessage("Save loaded.");
+} else {
+  showMessage("Start with $20. Buy seeds and grow carrots!");
   saveProgress();
 }
 drawScene();
-
-let bootSequenceStarted = false;
-
-function beginPlaySession() {
-  if (bootSequenceStarted) return;
-  bootSequenceStarted = true;
-  const bootGate = document.getElementById("bootGate");
-  const loadingScreen = document.getElementById("loadingScreen");
-  if (bootGate) {
-    bootGate.classList.add("hidden");
-    bootGate.setAttribute("aria-hidden", "true");
-  }
-  if (loadingScreen) {
-    loadingScreen.classList.remove("hidden");
-    loadingScreen.setAttribute("aria-hidden", "false");
-  }
-  window.setTimeout(() => {
-    if (loadingScreen) {
-      loadingScreen.classList.add("hidden");
-      loadingScreen.setAttribute("aria-hidden", "true");
-    }
-    if (hasLoadedSave) {
-      showMessage("Save loaded.");
-    } else {
-      showMessage("Start with $20. Buy seeds and grow carrots!");
-    }
-    drawScene();
-    gameLoop();
-  }, 1000);
-}
-
-const bootGateEl = document.getElementById("bootGate");
-if (bootGateEl) {
-  bootGateEl.addEventListener("click", beginPlaySession);
-  bootGateEl.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      beginPlaySession();
-    }
-  });
-}
+gameLoop();
