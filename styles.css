@@ -55,6 +55,86 @@ body {
   max-width: calc(100vw - 16px);
 }
 
+.pet-mutation-feed {
+  position: absolute;
+  right: -130px;
+  top: 18px;
+  width: 112px;
+  min-height: 250px;
+  max-height: calc(100% - 36px);
+  border-radius: 20px;
+  border: 3px solid #8a0f2d;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
+  padding: 0.55rem 0.45rem;
+  overflow: hidden;
+}
+
+.pet-mutation-feed-title {
+  margin: 0 0 0.4rem;
+  font-size: 0.68rem;
+  text-align: center;
+  color: #7f132f;
+  letter-spacing: 0.02em;
+}
+
+.pet-mutation-feed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.36rem;
+  overflow-y: auto;
+  max-height: calc(100% - 1.2rem);
+  padding-right: 2px;
+}
+
+.pet-mutation-feed-item {
+  font-size: 0.58rem;
+  line-height: 1.2;
+  color: #2b2f37;
+  background: rgba(164, 28, 65, 0.08);
+  border-radius: 8px;
+  padding: 0.3rem 0.28rem;
+}
+
+.redeem-code-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 20;
+  border: 0;
+  border-radius: 12px;
+  padding: 0.45rem 0.75rem;
+  background: rgba(40, 77, 104, 0.95);
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
+}
+
+.redeem-code-btn:hover {
+  filter: brightness(1.08);
+}
+
+.redeem-code-input {
+  width: min(380px, 100%);
+  border-radius: 10px;
+  border: 1px solid #7f97a8;
+  padding: 0.6rem 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.redeem-code-area {
+  width: min(420px, 100%);
+  min-height: 96px;
+  border-radius: 10px;
+  border: 1px solid #7f97a8;
+  padding: 0.6rem 0.7rem;
+  font-weight: 700;
+  line-height: 1.25;
+  resize: vertical;
+}
+
 .boot-gate {
   position: absolute;
   inset: 6px;
@@ -119,6 +199,23 @@ body {
   animation: loading-pulse 0.9s ease-in-out infinite;
 }
 
+.loading-tip {
+  margin: 1.25rem auto 0;
+  max-width: 34rem;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  font-weight: 600;
+  color: #c8e6d4;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.loading-skip-hint {
+  margin: 1rem 0 0;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: rgba(200, 230, 212, 0.55);
+}
+
 @keyframes loading-pulse {
   50% {
     opacity: 0.55;
@@ -140,6 +237,7 @@ body {
 .overlay {
   position: fixed;
   inset: 0;
+  z-index: 90;
   background: rgba(8, 15, 20, 0.48);
   display: grid;
   place-items: center;
@@ -205,4 +303,192 @@ body {
 .qty-btn,
 .qty-buy-btn {
   min-width: 44px;
+}
+
+.pet-panel-overlay {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 50vw;
+  max-width: 480px;
+  min-width: 280px;
+  z-index: 95;
+  background: rgba(8, 15, 20, 0.52);
+  backdrop-filter: blur(3px);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.pet-panel-overlay.hidden {
+  display: none;
+}
+
+.pet-panel-card {
+  position: relative;
+  background: var(--card);
+  border-radius: 16px;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.22);
+  padding: 1.25rem 1.2rem 1rem;
+  max-height: min(85vh, 520px);
+  overflow-y: auto;
+}
+
+.pet-panel-title {
+  margin: 0 2.5rem 0.5rem 0;
+  font-size: 1.35rem;
+  color: var(--text);
+}
+
+.pet-panel-desc {
+  margin: 0 0 1rem;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.pet-panel-timer {
+  margin: -0.35rem 0 1rem;
+  font-size: 0.92rem;
+  line-height: 1.35;
+  color: #284d68;
+  background: rgba(40, 77, 104, 0.08);
+  border-radius: 10px;
+  padding: 0.45rem 0.55rem;
+}
+
+.pet-panel-timer.hidden {
+  display: none;
+}
+
+.pet-panel-x {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(40, 77, 104, 0.15);
+  color: #284d68;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 0;
+}
+
+.pet-panel-x:hover {
+  background: rgba(40, 77, 104, 0.28);
+}
+
+.pet-panel-actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.pet-panel-pickup {
+  flex: 1;
+  border: 0;
+  border-radius: 10px;
+  padding: 0.65rem 1rem;
+  background: #284d68;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pet-panel-pickup:hover {
+  filter: brightness(1.08);
+}
+
+.prerelease-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  background: rgba(8, 15, 20, 0.55);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.prerelease-overlay.hidden {
+  display: none;
+}
+
+.prerelease-card {
+  width: min(480px, 94vw);
+  background: var(--card);
+  border-radius: 16px;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.22);
+  padding: 1.25rem 1.35rem 1.15rem;
+}
+
+.prerelease-title {
+  margin: 0 0 0.65rem;
+  font-size: 1.35rem;
+  color: var(--text);
+}
+
+.prerelease-msg {
+  margin: 0 0 1rem;
+  line-height: 1.5;
+  color: var(--text);
+  font-size: 0.98rem;
+}
+
+.prerelease-previews {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.prerelease-img {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  border-radius: 8px;
+  border: 2px solid rgba(40, 77, 104, 0.25);
+}
+
+.prerelease-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.prerelease-claim {
+  flex: 1;
+  min-width: 120px;
+  border: 0;
+  border-radius: 10px;
+  padding: 0.65rem 1rem;
+  background: #284d68;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.prerelease-claim:hover {
+  filter: brightness(1.08);
+}
+
+.prerelease-later {
+  border: 0;
+  border-radius: 10px;
+  padding: 0.65rem 1rem;
+  background: rgba(40, 77, 104, 0.15);
+  color: #284d68;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.prerelease-later:hover {
+  background: rgba(40, 77, 104, 0.28);
 }

@@ -8,18 +8,30 @@
   </head>
   <body>
     <div class="hud" aria-label="Controls">
-      <p>WASD · E · B · wheel = hotbar slot · middle-click = center map · right-click Buy for quantity</p>
+      <p>
+        WASD to move, E to plant or harvest, B for inventory, mouse wheel for hotbar slot, middle-click to center
+        the map, right-click Buy buttons to set quantity
+      </p>
     </div>
 
     <main class="game-wrap">
       <canvas id="game" width="960" height="600" aria-label="Garden game canvas"></canvas>
-      <div id="bootGate" class="boot-gate" role="button" tabindex="0" aria-label="Click to start game">
-        <p class="boot-gate-hint">Click the game to play</p>
+      <button id="redeemCodeBtn" class="redeem-code-btn" type="button" aria-label="Redeem code">
+        Code
+      </button>
+      <aside id="petMutationFeed" class="pet-mutation-feed" aria-live="polite" aria-label="Pet mutation feed">
+        <h3 class="pet-mutation-feed-title">Pet Mutations</h3>
+        <div id="petMutationFeedList" class="pet-mutation-feed-list"></div>
+      </aside>
+      <div id="bootGate" class="boot-gate" role="button" tabindex="0" aria-label="Click to start the game">
+        <p class="boot-gate-hint">Click to start</p>
       </div>
       <div id="loadingScreen" class="loading-screen hidden" aria-live="polite" aria-hidden="true">
         <div class="loading-screen-inner">
           <h1 class="loading-title">GROW SOME PLANTS</h1>
           <p class="loading-sub">Loading</p>
+          <p id="loadingTip" class="loading-tip" role="status"></p>
+          <p class="loading-skip-hint">Right-click to skip loading</p>
         </div>
       </div>
     </main>
@@ -33,6 +45,36 @@
       </div>
     </section>
 
-    <script src="./game.js?v=3"></script>
+    <section id="prereleaseOverlay" class="prerelease-overlay hidden" aria-live="polite" aria-hidden="true">
+      <div class="prerelease-card">
+        <h2 class="prerelease-title">Prerelease rewards</h2>
+        <p class="prerelease-msg">
+          You are a prerelease guest for our game, please receive these rewards, the 2 traffic men pets, the green guy
+          [ Legendary ] and red guy [ Legendary ].
+        </p>
+        <div class="prerelease-previews" aria-hidden="true">
+          <img src="./assets/traffic-green.png" alt="" class="prerelease-img" width="140" height="94" />
+          <img src="./assets/traffic-red.png" alt="" class="prerelease-img" width="140" height="94" />
+        </div>
+        <div class="prerelease-actions">
+          <button type="button" id="prereleaseClaimBtn" class="prerelease-claim">Claim</button>
+          <button type="button" id="prereleaseLaterBtn" class="prerelease-later">Not now</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="petPanelOverlay" class="pet-panel-overlay hidden" aria-live="polite" aria-hidden="true">
+      <div class="pet-panel-card">
+        <button type="button" id="petPanelCloseBtn" class="pet-panel-x" aria-label="Close">×</button>
+        <h2 id="petPanelTitle" class="pet-panel-title">Pet</h2>
+        <p id="petPanelDesc" class="pet-panel-desc"></p>
+        <p id="petPanelTimer" class="pet-panel-timer hidden"></p>
+        <div class="pet-panel-actions">
+          <button type="button" id="petPanelPickUpBtn" class="pet-panel-pickup">Pick up</button>
+        </div>
+      </div>
+    </section>
+
+    <script src="./game.js?v=37"></script>
   </body>
 </html>
